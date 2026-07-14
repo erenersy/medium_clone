@@ -65,6 +65,13 @@ def token_yenile(veri: RefreshTokenVerisi):
         refresh_token=refresh_token_uret(kullanici_id)
     )
 
+@app.get("/kullanicilar/{kullanici_id}", response_model=UserResponse)
+def kullanici_profili(kullanici_id: int, session: Session = Depends(get_session)):
+    kullanici = user_crud.id_ile_kullanici_bul(session, kullanici_id)
+    if not kullanici:
+        raise HTTPException(status_code=404, detail="Kullanici bulunamadi")
+    return kullanici
+
 # ----- POST -----
 
 @app.post("/yazilar", response_model=PostResponse)
