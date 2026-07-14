@@ -26,3 +26,7 @@ def yaziya_etiket_ekle(session: Session, yazi: Post, etiket_isimleri: List[str])
     session.commit()
     session.refresh(yazi)
     return yazi
+
+def tum_etiketleri_listele(session: Session) -> List[Tag]:
+    sorgu = select(Tag)
+    return session.exec(sorgu).all()

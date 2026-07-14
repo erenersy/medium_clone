@@ -15,7 +15,7 @@ from schemas.post import PostCreate, PostResponse, PostUpdate
 from schemas.comment import CommentCreate, CommentResponse
 from schemas.clap import ClapCreate, ClapResponse
 from schemas.follow import FollowResponse
-from schemas.tag import TagResponse
+from schemas.tag import TagCreate, TagResponse
 from schemas.auth import LoginVerisi, TokenCifti, RefreshTokenVerisi
 from core.security import (
     sifre_dogrula, access_token_uret, refresh_token_uret,
@@ -240,3 +240,7 @@ def yaziya_etiket_ekle(
     if yazi.yazar_id != kullanici_id:
         raise HTTPException(status_code=403, detail="Bu yaziya etiket ekleme yetkiniz yok")
     return tag_crud.yaziya_etiket_ekle(session, yazi, etiket_isimleri)
+
+@app.get("/etiketler", response_model=list[TagResponse])
+def tum_etiketler(session: Session = Depends(get_session)):
+    return tag_crud.tum_etiketleri_listele(session)
