@@ -196,6 +196,21 @@ def takibi_birak(
     follow_crud.takibi_birak(session, takip_eden_id=kullanici_id, takip_edilen_id=takip_edilen_id)
     return {"mesaj": "Takipten cikildi"}
 
+@app.get("/kullanicilar/{kullanici_id}/takipcileri", response_model=list[FollowResponse])
+def takipcileri_getir(kullanici_id: int, session: Session = Depends(get_session)):
+    hedef = user_crud.id_ile_kullanici_bul(session, kullanici_id)
+    if not hedef:
+        raise HTTPException(status_code=404, detail="Kullanici bulunamadi")
+    return follow_crud.takipcileri_listele(session, kullanici_id)
+
+
+@app.get("/kullanicilar/{kullanici_id}/takip-ettikleri", response_model=list[FollowResponse])
+def takip_ettiklerini_getir(kullanici_id: int, session: Session = Depends(get_session)):
+    hedef = user_crud.id_ile_kullanici_bul(session, kullanici_id)
+    if not hedef:
+        raise HTTPException(status_code=404, detail="Kullanici bulunamadi")
+    return follow_crud.takip_edilenleri_listele(session, kullanici_id)
+
 # ----- TAG -----
 
 @app.post("/yazilar/{yazi_id}/etiketler", response_model=PostResponse)
