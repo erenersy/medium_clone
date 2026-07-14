@@ -38,3 +38,7 @@ def yazi_guncelle(session: Session, yazi: Post, veri: PostUpdate) -> Post:
 def yazi_sil(session: Session, yazi: Post) -> None:
     session.delete(yazi)
     session.commit()
+
+def kullanicinin_yazilarini_listele(session: Session, yazar_id: int) -> List[Post]:
+    sorgu = select(Post).where(Post.yazar_id == yazar_id)
+    return session.exec(sorgu).all()

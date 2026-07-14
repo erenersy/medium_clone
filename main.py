@@ -80,6 +80,13 @@ def yazi_olustur(
 def yayinlanmis_yazilar(session: Session = Depends(get_session)):
     return post_crud.yayinlanmis_yazilari_listele(session)
 
+@app.get("/yazilarim", response_model=list[PostResponse])
+def kendi_yazilarim(
+    session: Session = Depends(get_session),
+    kullanici_id: int = Depends(get_current_user)
+):
+    return post_crud.kullanicinin_yazilarini_listele(session, kullanici_id)
+
 
 @app.get("/yazilar/{yazi_id}", response_model=PostResponse)
 def yazi_getir(yazi_id: int, session: Session = Depends(get_session)):
