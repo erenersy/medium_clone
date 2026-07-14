@@ -16,11 +16,10 @@ from schemas.comment import CommentCreate, CommentResponse
 from schemas.clap import ClapCreate, ClapResponse
 from schemas.follow import FollowResponse
 from schemas.tag import TagResponse
-from schemas.auth import LoginVerisi, TokenCifti
-
+from schemas.auth import LoginVerisi, TokenCifti, RefreshTokenVerisi
 from core.security import (
     sifre_dogrula, access_token_uret, refresh_token_uret,
-    get_current_user
+    get_current_user, refresh_token_dogrula
 )
 
 import crud.user as user_crud
@@ -56,6 +55,14 @@ def giris_yap(veri: LoginVerisi, session: Session = Depends(get_session)):
     return TokenCifti(
         access_token=access_token_uret(kullanici.id),
         refresh_token=refresh_token_uret(kullanici.id)
+    )
+
+@app.post("/refresh-token", response_model=TokenCifti)
+def token_yenile(veri: RefreshTokenVerisi):
+    kullanici_id = refresh_token_dogrula(veri.refresh_token)
+    return TokenCifti(
+        access_token=access_token_uret(kullanici_id),
+        refresh_token=refresh_token_uret(kullanici_id)
     )
 
 # ----- POST -----

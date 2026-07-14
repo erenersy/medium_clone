@@ -60,3 +60,19 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         return int(kullanici_id)
     except JWTError:
         raise hata
+
+def refresh_token_dogrula(token: str) -> int:
+    hata = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Gecersiz veya suresi dolmus refresh token"
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("type") != "refresh":
+            raise hata
+        kullanici_id = payload.get("sub")
+        if kullanici_id is None:
+            raise hata
+        return int(kullanici_id)
+    except JWTError:
+        raise hata
