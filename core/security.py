@@ -6,6 +6,10 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 import os
+from sqlmodel import Session
+from db.session import get_session
+from data_models.user import User
+
 
 load_dotenv()
 
@@ -44,7 +48,10 @@ def refresh_token_uret(kullanici_id: int) -> str:
     return token_uret(kullanici_id, "refresh", timedelta(days=REFRESH_TOKEN_SURESI_GUN))
 
 
-def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> int:
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    session: Session = Depends(get_session)
+) -> User:
     token = credentials.credentials
     hata = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -57,7 +64,10 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         kullanici_id = payload.get("sub")
         if kullanici_id is None:
             raise hata
-        return int(kullanici_id)
+        kullanici = session.get(User, int(kullanici_id))
+        if kullanici is None:
+            raise hata
+        return kullanici
     except JWTError:
         raise hata
 
