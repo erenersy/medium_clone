@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Literal
 from sqlmodel import SQLModel
 
 class PostCreate(SQLModel):
@@ -15,4 +15,4 @@ class PostResponse(SQLModel):
 class PostUpdate(SQLModel):
     baslik: Optional[str] = None
     icerik: Optional[str] = None
-    durum: Optional[str] = None
+    durum: Optional[Literal["draft", "published"]] = None

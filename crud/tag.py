@@ -5,7 +5,8 @@ from data_models.post import Post
 
 
 def etiket_bul_veya_olustur(session: Session, isim: str) -> Tag:
-    sorgu = select(Tag).where(Tag.isim == isim)
+    isim_normalize = isim.strip().lower()
+    sorgu = select(Tag).where(Tag.isim == isim_normalize)
     mevcut = session.exec(sorgu).first()
     if mevcut:
         return mevcut

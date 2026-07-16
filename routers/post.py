@@ -4,8 +4,10 @@ from sqlmodel import Session
 from db.session import get_session
 from data_models.user import User
 from schemas.post import PostCreate, PostResponse, PostUpdate
-from core.security import get_current_user
+from core.security import get_current_user, get_current_user_optional
 import crud.post as post_crud
+from typing import Optional
+
 
 router = APIRouter(prefix="/yazilar", tags=["Post"])
 
@@ -33,10 +35,17 @@ def kendi_yazilarim(
 
 
 @router.get("/{yazi_id}", response_model=PostResponse)
-def yazi_getir(yazi_id: int, session: Session = Depends(get_session)):
+def yazi_getir(
+    yazi_id: int,
+    session: Session = Depends(get_session),
+    kullanici: Optional[User] = Depends(get_current_user_optional)
+):
     yazi = post_crud.yazi_bul(session, yazi_id)
     if not yazi:
         raise HTTPException(status_code=404, detail="Yazi bulunamadi")
+    if yazi.durum != "published":
+        if kullanici is None or yazi.yazar_id != kullanici.id:
+            raise HTTPException(status_code=404, detail="Yazi bulunamadi")
     return yazi
 
 

@@ -13,11 +13,21 @@ from data_models.user import User
 
 load_dotenv()
 
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
-ACCESS_TOKEN_SURESI_DAKIKA = int(os.getenv("ACCESS_TOKEN_SURESI_DAKIKA"))
-REFRESH_TOKEN_SURESI_GUN = int(os.getenv("REFRESH_TOKEN_SURESI_GUN"))
+def _env_zorunlu(anahtar: str) -> str:
+    deger = os.getenv(anahtar)
+    if not deger:
+        raise RuntimeError(f".env dosyasinda '{anahtar}' degeri eksik veya bos")
+    return deger
 
+
+SECRET_KEY = _env_zorunlu("SECRET_KEY")
+ALGORITHM = _env_zorunlu("ALGORITHM")
+
+try:
+    ACCESS_TOKEN_SURESI_DAKIKA = int(_env_zorunlu("ACCESS_TOKEN_SURESI_DAKIKA"))
+    REFRESH_TOKEN_SURESI_GUN = int(_env_zorunlu("REFRESH_TOKEN_SURESI_GUN"))
+except ValueError:
+    raise RuntimeError("ACCESS_TOKEN_SURESI_DAKIKA ve REFRESH_TOKEN_SURESI_GUN sayisal bir deger olmali")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
@@ -71,7 +81,7 @@ def get_current_user(
     except JWTError:
         raise hata
 
-def refresh_token_dogrula(token: str) -> int:
+def refresh_token_dogrula(token: str, session: Session) -> User:
     hata = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Gecersiz veya suresi dolmus refresh token"
@@ -83,6 +93,28 @@ def refresh_token_dogrula(token: str) -> int:
         kullanici_id = payload.get("sub")
         if kullanici_id is None:
             raise hata
-        return int(kullanici_id)
+        kullanici = session.get(User, int(kullanici_id))
+        if kullanici is None:
+            raise hata
+        return kullanici
     except JWTError:
         raise hata
+
+security_optional = HTTPBearer(auto_error=False)
+
+def get_current_user_optional(
+    credentials: HTTPAuthorizationCredentials = Depends(security_optional),
+    session: Session = Depends(get_session)
+) -> Optional[User]:
+    if credentials is None:
+        return None
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("type") != "access":
+            return None
+        kullanici_id = payload.get("sub")
+        if kullanici_id is None:
+            return None
+        return session.get(User, int(kullanici_id))
+    except JWTError:
+        return None

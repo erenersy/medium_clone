@@ -20,6 +20,8 @@ def yorum_olustur(
     yazi = post_crud.yazi_bul(session, veri.post_id)
     if not yazi:
         raise HTTPException(status_code=404, detail="Yazi bulunamadi")
+    if yazi.durum != "published" and yazi.yazar_id != kullanici.id:
+        raise HTTPException(status_code=404, detail="Yazi bulunamadi")
     return comment_crud.yorum_olustur(session, veri, yazan_id=kullanici.id)
 
 

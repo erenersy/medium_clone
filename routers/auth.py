@@ -30,9 +30,9 @@ def giris_yap(veri: LoginVerisi, session: Session = Depends(get_session)):
 
 
 @router.post("/refresh-token", response_model=TokenCifti)
-def token_yenile(veri: RefreshTokenVerisi):
-    kullanici_id = refresh_token_dogrula(veri.refresh_token)
+def token_yenile(veri: RefreshTokenVerisi, session: Session = Depends(get_session)):
+    kullanici = refresh_token_dogrula(veri.refresh_token, session)
     return TokenCifti(
-        access_token=access_token_uret(kullanici_id),
-        refresh_token=refresh_token_uret(kullanici_id)
+        access_token=access_token_uret(kullanici.id),
+        refresh_token=refresh_token_uret(kullanici.id)
     )

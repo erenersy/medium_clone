@@ -20,6 +20,8 @@ def clap_at(
     yazi = post_crud.yazi_bul(session, veri.post_id)
     if not yazi:
         raise HTTPException(status_code=404, detail="Yazi bulunamadi")
+    if yazi.durum != "published" and yazi.yazar_id != kullanici.id:
+        raise HTTPException(status_code=404, detail="Yazi bulunamadi")
     return clap_crud.clap_at(session, veri, kullanici_id=kullanici.id)
 
 
