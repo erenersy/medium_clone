@@ -26,6 +26,9 @@ def takip_et(session: Session, takip_eden_id: int, takip_edilen_id: int) -> Foll
 
 
 def takibi_birak(session: Session, takip_eden_id: int, takip_edilen_id: int) -> None:
+    if takip_eden_id == takip_edilen_id:
+        raise ValueError("Bir kullanici kendini takipten cikamaz")
+
     sorgu = select(Follow).where(
         Follow.takip_eden_id == takip_eden_id,
         Follow.takip_edilen_id == takip_edilen_id

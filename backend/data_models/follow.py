@@ -2,7 +2,7 @@ from typing import Optional, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship
 
 if TYPE_CHECKING:
-    from data_models.user import User
+    from backend.data_models.user import User
 
 class Follow(SQLModel, table=True):
     __tablename__ = "takipler"

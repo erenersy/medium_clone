@@ -2,8 +2,8 @@ from typing import Optional, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship
 
 if TYPE_CHECKING:
-    from data_models.user import User
-    from data_models.post import Post
+    from backend.data_models.user import User
+    from backend.data_models.post import Post
 
 class Comment(SQLModel, table=True):
     __tablename__ = "yorumlar"

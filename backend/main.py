@@ -1,13 +1,6 @@
 from fastapi import FastAPI
 
 from db.session import veritabanini_olustur
-from data_models.user import User
-from data_models.post import Post
-from data_models.comment import Comment
-from data_models.clap import Clap
-from data_models.follow import Follow
-from data_models.tag import Tag
-from data_models.post_tag_link import PostTagLink
 
 from routers import auth, user, post, comment, clap, follow, tag
 

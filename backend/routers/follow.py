@@ -28,12 +28,22 @@ def takip_et(
 
 @router.delete("/takip/{takip_edilen_id}")
 def takibi_birak(
-    takip_edilen_id: int,
-    session: Session = Depends(get_session),
-    kullanici: User = Depends(get_current_user)
+        takip_edilen_id: int,
+        session: Session = Depends(get_session),
+        kullanici: User = Depends(get_current_user)
 ):
-    follow_crud.takibi_birak(session, takip_eden_id=kullanici.id, takip_edilen_id=takip_edilen_id)
-    return {"mesaj": "Takipten cikildi"}
+    # 1. KONTROL: Takipten çıkılmak istenen kullanıcı gerçekten var mı?
+    hedef = user_crud.id_ile_kullanici_bul(session, takip_edilen_id)
+    if not hedef:
+        raise HTTPException(status_code=404, detail="Kullanici bulunamadi")
+
+    # 2. İŞLEM VE YAKALAMA: CRUD katmanından fırlayacak ValueError'ı süzüyoruz
+    try:
+        follow_crud.takibi_birak(session, takip_eden_id=kullanici.id, takip_edilen_id=takip_edilen_id)
+        return {"mesaj": "Takipten cikildi"}
+    except ValueError as hata:
+        # CRUD'daki "Bir kullanici kendini takipten cikamaz" mesajını yakalayıp 400 yapıyoruz
+        raise HTTPException(status_code=400, detail=str(hata))
 
 
 @router.get("/kullanicilar/{kullanici_id}/takipcileri", response_model=list[FollowResponse])
