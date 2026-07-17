@@ -23,3 +23,10 @@ def eposta_ile_kullanici_bul(session: Session, eposta: str) -> User | None:
 
 def id_ile_kullanici_bul(session: Session, kullanici_id: int) -> User | None:
     return session.get(User, kullanici_id)
+
+def id_listesiyle_kullanicilari_bul(session: Session, id_listesi: list[int]) -> dict[int, User]:
+    if not id_listesi:
+        return {}
+    sorgu = select(User).where(User.id.in_(set(id_listesi)))
+    kullanicilar = session.exec(sorgu).all()
+    return {kullanici.id: kullanici for kullanici in kullanicilar}

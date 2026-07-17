@@ -8,4 +8,5 @@ class CommentResponse(SQLModel):
     id: int
     icerik: str
     yazan_id: int
+    yazan_isim: str
     post_id: int

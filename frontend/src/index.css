@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: Georgia, Cambria, "Times New Roman", serif;
+  --color-voice-black: #191919;
+  --color-voice-gray: #6B6B6B;
+  --color-voice-border: #E6E6E6;
+  --color-voice-green: #1A8917;
+}
+
+body {
+  margin: 0;
+}

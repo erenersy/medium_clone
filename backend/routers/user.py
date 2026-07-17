@@ -6,6 +6,7 @@ from schemas.user import UserResponse, UserProfileResponse
 import crud.user as user_crud
 import crud.post as post_crud
 import crud.follow as follow_crud
+from schemas.post import PostResponse
 
 router = APIRouter(prefix="/kullanicilar", tags=["User"])
 
@@ -28,6 +29,14 @@ def kullanici_profili(kullanici_id: int, session: Session = Depends(get_session)
     takipcileri = follow_crud.takipcileri_listele(session, kullanici_id)
     takip_ettikleri = follow_crud.takip_edilenleri_listele(session, kullanici_id)
 
+    yazi_response_listesi = [
+        PostResponse(
+            id=y.id, baslik=y.baslik, icerik=y.icerik,
+            durum=y.durum, yazar_id=y.yazar_id, yazar_isim=kullanici.isim
+        )
+        for y in yazilar
+    ]
+
     return UserProfileResponse(
         id=kullanici.id,
         isim=kullanici.isim,
@@ -35,5 +44,5 @@ def kullanici_profili(kullanici_id: int, session: Session = Depends(get_session)
         yazi_sayisi=len(yazilar),
         takipci_sayisi=len(takipcileri),
         takip_sayisi=len(takip_ettikleri),
-        yazilar=yazilar
+        yazilar=yazi_response_listesi
     )

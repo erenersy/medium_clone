@@ -11,6 +11,7 @@ class PostResponse(SQLModel):
     icerik: str
     durum: str
     yazar_id: int
+    yazar_isim: str
 
 class PostUpdate(SQLModel):
     baslik: Optional[str] = None
