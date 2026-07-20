@@ -1,8 +1,12 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+import os
 
 from db.session import veritabanini_olustur
 from fastapi.middleware.cors import CORSMiddleware
 from routers import auth, user, post, comment, clap, follow, tag
+
+os.makedirs("uploads", exist_ok=True)   # BURAYA TAŞINDI — mount'tan önce çalışmalı
 
 app = FastAPI(title="Medium Clone API")
 
@@ -18,6 +22,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 app.include_router(auth.router)
 app.include_router(user.router)

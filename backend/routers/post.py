@@ -1,6 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
-
+import os
+import shutil
+import uuid
+from fastapi import UploadFile, File
 from db.session import get_session
 from data_models.user import User
 from schemas.post import PostCreate, PostResponse, PostUpdate
@@ -75,3 +78,33 @@ def yazi_sil(
         raise HTTPException(status_code=403, detail="Bu yaziyi silme yetkiniz yok")
     post_crud.yazi_sil(session, yazi)
     return {"mesaj": "Yazi silindi"}
+
+IZIN_VERILEN_UZANTILAR = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+UPLOAD_KLASORU = "uploads"
+
+@router.post("/{yazi_id}/kapak-resmi", response_model=PostResponse)
+def kapak_resmi_yukle(
+    yazi_id: int,
+    dosya: UploadFile = File(...),
+    session: Session = Depends(get_session),
+    kullanici: User = Depends(get_current_user)
+):
+    yazi = post_crud.yazi_bul(session, yazi_id)
+    if not yazi:
+        raise HTTPException(status_code=404, detail="Yazi bulunamadi")
+    if yazi.yazar_id != kullanici.id:
+        raise HTTPException(status_code=403, detail="Bu yaziyi guncelleme yetkiniz yok")
+
+    uzanti = os.path.splitext(dosya.filename)[1].lower()
+    if uzanti not in IZIN_VERILEN_UZANTILAR:
+        raise HTTPException(status_code=400, detail="Sadece jpg, png, webp, gif dosyalari kabul edilir")
+
+    os.makedirs(UPLOAD_KLASORU, exist_ok=True)
+    dosya_adi = f"{uuid.uuid4().hex}{uzanti}"
+    kayit_yolu = os.path.join(UPLOAD_KLASORU, dosya_adi)
+
+    with open(kayit_yolu, "wb") as hedef:
+        shutil.copyfileobj(dosya.file, hedef)
+
+    guncel_yazi = post_crud.yazinin_kapak_resmini_guncelle(session, yazi, f"/uploads/{dosya_adi}")
+    return _post_response_olustur(guncel_yazi, kullanici.isim)

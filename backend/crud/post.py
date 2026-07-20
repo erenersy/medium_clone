@@ -46,3 +46,10 @@ def kullanicinin_yazilarini_listele(session: Session, yazar_id: int) -> List[Pos
 def kullanicinin_yayinlanan_yazilarini_listele(session: Session, yazar_id: int) -> List[Post]:
     sorgu = select(Post).where(Post.yazar_id == yazar_id, Post.durum == "published")
     return session.exec(sorgu).all()
+
+def yazinin_kapak_resmini_guncelle(session: Session, yazi: Post, resim_yolu: str) -> Post:
+    yazi.kapak_resmi = resim_yolu
+    session.add(yazi)
+    session.commit()
+    session.refresh(yazi)
+    return yazi

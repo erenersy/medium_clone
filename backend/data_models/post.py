@@ -15,6 +15,7 @@ class Post(SQLModel, table=True):
     baslik: str
     icerik: str
     durum: str = Field(default="draft")
+    kapak_resmi: Optional[str] = Field(default=None)   # YENİ
 
     yazar_id: int = Field(foreign_key="kullanicilar.id")
     yazar: Optional["User"] = Relationship(back_populates="yazilar")
