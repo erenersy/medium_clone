@@ -12,7 +12,8 @@ class PostResponse(SQLModel):
     durum: str
     yazar_id: int
     yazar_isim: str
-    kapak_resmi: Optional[str] = None   # YENİ
+    kapak_resmi: Optional[str] = None
+    etiketler: list[str] = []   # YENİ
 
 class PostUpdate(SQLModel):
     baslik: Optional[str] = None

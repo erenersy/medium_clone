@@ -18,9 +18,10 @@ router = APIRouter(prefix="/yazilar", tags=["Post"])
 def _post_response_olustur(yazi, yazar_isim: str) -> PostResponse:
     return PostResponse(
         id=yazi.id, baslik=yazi.baslik, icerik=yazi.icerik,
-        durum=yazi.durum, yazar_id=yazi.yazar_id, yazar_isim=yazar_isim
+        durum=yazi.durum, yazar_id=yazi.yazar_id, yazar_isim=yazar_isim,
+        kapak_resmi=yazi.kapak_resmi,
+        etiketler=[e.isim for e in yazi.etiketler]   # YENİ
     )
-
 
 @router.post("", response_model=PostResponse)
 def yazi_olustur(veri: PostCreate, session: Session = Depends(get_session), kullanici: User = Depends(get_current_user)):
@@ -41,6 +42,19 @@ def kendi_yazilarim(session: Session = Depends(get_session), kullanici: User = D
     yazilar = post_crud.kullanicinin_yazilarini_listele(session, kullanici.id)
     return [_post_response_olustur(y, kullanici.isim) for y in yazilar]
 
+@router.get("/one-cikanlar", response_model=list[PostResponse])
+def one_cikan_yazilar(session: Session = Depends(get_session)):
+    yazilar = post_crud.en_cok_clap_alan_yazilar(session, limit=3)
+    yazar_idleri = [y.yazar_id for y in yazilar]
+    yazarlar = user_crud.id_listesiyle_kullanicilari_bul(session, yazar_idleri)
+    return [_post_response_olustur(y, yazarlar[y.yazar_id].isim) for y in yazilar]
+
+@router.get("/etiket/{etiket_isim}", response_model=list[PostResponse])
+def etikete_gore_yazilar(etiket_isim: str, session: Session = Depends(get_session)):
+    yazilar = post_crud.etikete_gore_yayinlanmis_yazilari_listele(session, etiket_isim)
+    yazar_idleri = [y.yazar_id for y in yazilar]
+    yazarlar = user_crud.id_listesiyle_kullanicilari_bul(session, yazar_idleri)
+    return [_post_response_olustur(y, yazarlar[y.yazar_id].isim) for y in yazilar]
 
 @router.get("/{yazi_id}", response_model=PostResponse)
 def yazi_getir(yazi_id: int, session: Session = Depends(get_session), kullanici: Optional[User] = Depends(get_current_user_optional)):
@@ -108,3 +122,4 @@ def kapak_resmi_yukle(
 
     guncel_yazi = post_crud.yazinin_kapak_resmini_guncelle(session, yazi, f"/uploads/{dosya_adi}")
     return _post_response_olustur(guncel_yazi, kullanici.isim)
+

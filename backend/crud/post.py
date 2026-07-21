@@ -1,7 +1,11 @@
 from typing import Optional, List
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func
 from data_models.post import Post
 from schemas.post import PostCreate, PostUpdate
+from data_models.clap import Clap
+from data_models.tag import Tag
+from data_models.post_tag_link import PostTagLink
+
 
 
 def yazi_olustur(session: Session, veri: PostCreate, yazar_id: int) -> Post:
@@ -53,3 +57,24 @@ def yazinin_kapak_resmini_guncelle(session: Session, yazi: Post, resim_yolu: str
     session.commit()
     session.refresh(yazi)
     return yazi
+
+def en_cok_clap_alan_yazilar(session: Session, limit: int = 3) -> List[Post]:
+    sorgu = (
+        select(Post, func.sum(Clap.sayi).label("toplam"))
+        .join(Clap, Clap.post_id == Post.id)
+        .where(Post.durum == "published")
+        .group_by(Post.id)
+        .order_by(func.sum(Clap.sayi).desc())
+        .limit(limit)
+    )
+    sonuclar = session.exec(sorgu).all()
+    return [satir[0] for satir in sonuclar]
+
+def etikete_gore_yayinlanmis_yazilari_listele(session: Session, etiket_isim: str) -> List[Post]:
+    sorgu = (
+        select(Post)
+        .join(PostTagLink, PostTagLink.post_id == Post.id)
+        .join(Tag, Tag.id == PostTagLink.tag_id)
+        .where(Tag.isim == etiket_isim.strip().lower(), Post.durum == "published")
+    )
+    return session.exec(sorgu).all()

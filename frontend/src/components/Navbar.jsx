@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import Icon, { IKON_YOLLARI } from "./Icon";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -7,21 +8,19 @@ export default function Navbar() {
 
   return (
     <nav className="border-b border-voice-border">
-      <div className="max-w-5xl mx-auto flex items-center justify-between px-6 py-4">
+      <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
         <Link to="/" className="text-2xl font-serif font-bold text-voice-black">
           Voice
         </Link>
         <div className="flex items-center gap-5">
           {user ? (
             <>
-              <Link to="/yazi/yeni" className="text-sm text-voice-gray hover:text-voice-black">
+              <Link
+                to="/yazi/yeni"
+                className="flex items-center gap-1.5 text-sm text-voice-gray hover:text-voice-black"
+              >
+                <Icon yol={IKON_YOLLARI.yaz} size={18} />
                 Yaz
-              </Link>
-              <Link to="/yazilarim" className="text-sm text-voice-gray hover:text-voice-black">
-                Yazılarım
-              </Link>
-              <Link to={`/profil/${user.id}`} className="text-sm font-medium text-voice-black">
-                {user.isim}
               </Link>
               <button
                 onClick={() => { logout(); navigate("/"); }}

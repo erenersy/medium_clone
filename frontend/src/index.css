@@ -8,6 +8,10 @@
   --color-voice-green: #1A8917;
 }
 
+html {
+  font-size: 110%;   /* YENİ — tüm rem tabanlı boyutları %10 büyütür */
+}
+
 body {
   margin: 0;
 }
