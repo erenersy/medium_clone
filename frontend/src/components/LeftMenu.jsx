@@ -16,7 +16,7 @@ export default function LeftMenu() {
 ];
 
   return (
-    <nav className="hidden lg:block w-56 shrink-0 pr-8 py-8 sticky top-0 h-fit">
+    <nav className="hidden lg:block w-56 shrink-0 pr-8 py-8 sticky top-16 h-fit">
       {ogeler.map((oge) => {
         const aktif = oge.yol === "/" ? location.pathname === "/" : location.pathname.startsWith(oge.yol);
         return (

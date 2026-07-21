@@ -7,8 +7,8 @@ export default function Navbar() {
   const navigate = useNavigate();
 
   return (
-    <nav className="border-b border-voice-border">
-      <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
+    <nav className="sticky top-0 z-50 bg-white border-b border-voice-border ">
+      <div className="max-w-7xl mx-auto h-16 flex items-center justify-between px-6">
         <Link to="/" className="text-2xl font-serif font-bold text-voice-black">
           Voice
         </Link>

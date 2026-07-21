@@ -3,9 +3,10 @@ from sqlmodel import Session, select, func
 from data_models.post import Post
 from schemas.post import PostCreate, PostUpdate
 from data_models.clap import Clap
+from data_models.comment import Comment
 from data_models.tag import Tag
 from data_models.post_tag_link import PostTagLink
-
+from sqlmodel import select
 
 
 def yazi_olustur(session: Session, veri: PostCreate, yazar_id: int) -> Post:
@@ -39,7 +40,19 @@ def yazi_guncelle(session: Session, yazi: Post, veri: PostUpdate) -> Post:
     return yazi
 
 
-def yazi_sil(session: Session, yazi: Post) -> None:
+def yazi_sil(session: Session, yazi: Post):
+    claplar = session.exec(select(Clap).where(Clap.post_id == yazi.id)).all()
+    for clap in claplar:
+        session.delete(clap)
+
+    yorumlar = session.exec(select(Comment).where(Comment.post_id == yazi.id)).all()
+    for yorum in yorumlar:
+        session.delete(yorum)
+
+    etiket_baglantilari = session.exec(select(PostTagLink).where(PostTagLink.post_id == yazi.id)).all()
+    for baglanti in etiket_baglantilari:
+        session.delete(baglanti)
+
     session.delete(yazi)
     session.commit()
 

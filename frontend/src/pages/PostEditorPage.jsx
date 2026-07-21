@@ -1,92 +1,137 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { postApi } from "../api/postApi";
+import CropModal from "../components/CropModal";
 
 export default function PostEditorPage() {
-  const { id } = useParams();
-  const duzenlemeModu = Boolean(id);
+  const { id: urlId } = useParams();
+  const [yaziId, setYaziId] = useState(urlId ? Number(urlId) : null);
   const [baslik, setBaslik] = useState("");
   const [icerik, setIcerik] = useState("");
   const [kapakResmi, setKapakResmi] = useState(null);
   const [etiketGirdisi, setEtiketGirdisi] = useState("");
   const [etiketler, setEtiketler] = useState([]);
+  const [kirpilacakDosya, setKirpilacakDosya] = useState(null);
+  const [kayitDurumu, setKayitDurumu] = useState("");
   const navigate = useNavigate();
+  const zamanlayiciRef = useRef(null);
+  const ilkYuklemeRef = useRef(true);
 
   useEffect(() => {
-    if (duzenlemeModu) {
-      postApi.getById(id).then((res) => {
+    if (urlId) {
+      postApi.getById(urlId).then((res) => {
         setBaslik(res.data.baslik);
         setIcerik(res.data.icerik);
         setKapakResmi(res.data.kapak_resmi);
         setEtiketler(res.data.etiketler);
       });
     }
-  }, [id]);
+  }, [urlId]);
 
-  const handleResimSec = async (e) => {
+  useEffect(() => {
+    if (ilkYuklemeRef.current) {
+      ilkYuklemeRef.current = false;
+      return;
+    }
+    if (!baslik.trim() && !icerik.trim()) return;
+
+    if (zamanlayiciRef.current) clearTimeout(zamanlayiciRef.current);
+
+    zamanlayiciRef.current = setTimeout(async () => {
+      setKayitDurumu("Kaydediliyor...");
+      if (yaziId) {
+        await postApi.update(yaziId, { baslik, icerik, durum: "draft" });
+      } else {
+        const res = await postApi.create(baslik || "Başlıksız Taslak", icerik);
+        setYaziId(res.data.id);
+        navigate(`/yazi/${res.data.id}/duzenle`, { replace: true });
+      }
+      setKayitDurumu("Taslak kaydedildi");
+    }, 2000);
+
+    return () => clearTimeout(zamanlayiciRef.current);
+  }, [baslik, icerik]);
+
+  const handleDosyaSecildi = (e) => {
     const dosya = e.target.files[0];
     if (!dosya) return;
-
-    if (!duzenlemeModu) {
-      alert("Resim eklemeden önce yazını bir kez kaydet (Taslak Kaydet).");
-      return;
-    }
-
-    const res = await postApi.uploadCover(id, dosya);
-    setKapakResmi(res.data.kapak_resmi);
+    setKirpilacakDosya(dosya);
+    e.target.value = "";
   };
 
-  const handleEtiketEkle = async (e) => {
-    e.preventDefault();
-    const temiz = etiketGirdisi.trim();
-    if (!temiz) return;
+  const handleKirpmaTamam = async (kirpilmisDosya) => {
+    setKirpilacakDosya(null);
 
-    if (!duzenlemeModu) {
-      alert("Etiket eklemeden önce yazını bir kez kaydet (Taslak Kaydet).");
-      return;
+    let hedefId = yaziId;
+    if (!hedefId) {
+      const res = await postApi.create(baslik || "Başlıksız Taslak", icerik);
+      hedefId = res.data.id;
+      setYaziId(hedefId);
+      navigate(`/yazi/${hedefId}/duzenle`, { replace: true });
     }
 
+    const yuklemeRes = await postApi.uploadCover(hedefId, kirpilmisDosya);
+    setKapakResmi(yuklemeRes.data.kapak_resmi);
+  };
+
+  const handleEtiketEkle = async () => {
+    const temiz = etiketGirdisi.trim();
+    if (!temiz || !yaziId) return;
     if (etiketler.includes(temiz.toLowerCase())) {
       setEtiketGirdisi("");
       return;
     }
-
-    await postApi.addTags(id, [temiz]);
+    await postApi.addTags(yaziId, [temiz]);
     setEtiketler([...etiketler, temiz.toLowerCase()]);
     setEtiketGirdisi("");
   };
 
   const handleEtiketSil = async (etiket) => {
-    await postApi.removeTag(id, etiket);
+    await postApi.removeTag(yaziId, etiket);
     setEtiketler(etiketler.filter((e) => e !== etiket));
   };
 
-  const handleKaydet = async (durum) => {
-    if (duzenlemeModu) {
-      await postApi.update(id, { baslik, icerik, durum });
-      navigate(`/yazi/${id}`);
-    } else {
+  const handleYayinla = async () => {
+    if (zamanlayiciRef.current) clearTimeout(zamanlayiciRef.current);
+    let hedefId = yaziId;
+    if (!hedefId) {
       const res = await postApi.create(baslik, icerik);
-      navigate(`/yazi/${res.data.id}/duzenle`);
+      hedefId = res.data.id;
     }
+    await postApi.update(hedefId, { baslik, icerik, durum: "published" });
+    navigate(`/yazi/${hedefId}`);
   };
 
   const RESIM_TABANI = "http://127.0.0.1:8000";
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-10">
-      {kapakResmi && (
-        <img
-          src={`${RESIM_TABANI}${kapakResmi}`}
-          alt="Kapak"
-          className="w-full h-64 object-cover rounded mb-4"
+      {kirpilacakDosya && (
+        <CropModal
+          dosya={kirpilacakDosya}
+          onIptal={() => setKirpilacakDosya(null)}
+          onTamam={handleKirpmaTamam}
         />
       )}
 
-      <label className="inline-block mb-4 text-sm text-voice-gray border border-voice-border rounded-full px-4 py-2 cursor-pointer hover:border-voice-black">
-        {kapakResmi ? "Kapak resmini değiştir" : "Kapak resmi ekle"}
-        <input type="file" accept="image/*" onChange={handleResimSec} className="hidden" />
-      </label>
+      {kapakResmi ? (
+        <>
+          <img
+            src={`${RESIM_TABANI}${kapakResmi}`}
+            alt="Kapak"
+            className="w-full h-64 object-cover rounded mb-2"
+          />
+          <label className="inline-block mb-4 text-xs text-voice-gray border border-voice-border rounded-full px-3 py-1.5 cursor-pointer hover:border-voice-black">
+            Kapak resmini değiştir
+            <input type="file" accept="image/*" onChange={handleDosyaSecildi} className="hidden" />
+          </label>
+        </>
+      ) : (
+        <label className="inline-block mb-4 text-sm text-voice-gray border border-voice-border rounded-full px-4 py-2 cursor-pointer hover:border-voice-black">
+          Kapak resmi ekle
+          <input type="file" accept="image/*" onChange={handleDosyaSecildi} className="hidden" />
+        </label>
+      )}
 
       <input
         value={baslik}
@@ -103,20 +148,22 @@ export default function PostEditorPage() {
       />
 
       <div className="mt-6 border-t border-voice-border pt-4">
-        <form onSubmit={handleEtiketEkle} className="flex gap-2">
+        <div className="flex gap-2">
           <input
             value={etiketGirdisi}
             onChange={(e) => setEtiketGirdisi(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleEtiketEkle()}
             placeholder="Etiket ekle (ör. teknoloji)"
             className="flex-1 border border-voice-border rounded-full px-4 py-1.5 text-sm outline-none"
           />
           <button
-            type="submit"
+            type="button"
+            onClick={handleEtiketEkle}
             className="border border-voice-border rounded-full px-4 py-1.5 text-sm hover:border-voice-black"
           >
             Ekle
           </button>
-        </form>
+        </div>
         {etiketler.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-3">
             {etiketler.map((etiket) => (
@@ -137,19 +184,14 @@ export default function PostEditorPage() {
         )}
       </div>
 
-      <div className="flex gap-3 mt-6 border-t border-voice-border pt-4">
+      <div className="flex items-center gap-4 mt-6 border-t border-voice-border pt-4">
         <button
-          onClick={() => handleKaydet("draft")}
-          className="border border-voice-border rounded-full px-5 py-2 text-sm"
-        >
-          Taslak Kaydet
-        </button>
-        <button
-          onClick={() => handleKaydet("published")}
+          onClick={handleYayinla}
           className="bg-voice-green text-white rounded-full px-5 py-2 text-sm"
         >
           Yayınla
         </button>
+        {kayitDurumu && <span className="text-xs text-voice-gray">{kayitDurumu}</span>}
       </div>
     </div>
   );
