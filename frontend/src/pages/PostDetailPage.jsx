@@ -36,6 +36,7 @@ export default function PostDetailPage() {
   const [yeniYorum, setYeniYorum] = useState("");
   const [hata, setHata] = useState("");
   const [okunuyor, setOkunuyor] = useState(false);
+  const [yukleniyor, setYukleniyor] = useState(false);
   const [secilenDil, setSecilenDil] = useState("tr-TR");
 
   const veriYukle = () => {
@@ -52,10 +53,6 @@ export default function PostDetailPage() {
     }
   }, [yazi]);
 
-  useEffect(() => {
-    return () => window.speechSynthesis.cancel();
-  }, []);
-
   const handleClap = async () => {
     await clapApi.clap(id);
     clapApi.getCount(id).then((res) => setClapSayisi(res.data.toplam_clap));
@@ -63,21 +60,10 @@ export default function PostDetailPage() {
 
   const handleSesliOku = () => {
     if (okunuyor) {
-      window.speechSynthesis.cancel();
       setOkunuyor(false);
       return;
     }
-    const konusma = new SpeechSynthesisUtterance(`${yazi.baslik}. ${yazi.icerik}`);
-    konusma.lang = secilenDil;
-
-    const sesler = window.speechSynthesis.getVoices();
-    const uygunSes =
-      sesler.find((s) => s.lang === secilenDil) ||
-      sesler.find((s) => s.lang.startsWith(secilenDil.split("-")[0]));
-    if (uygunSes) konusma.voice = uygunSes;
-
-    konusma.onend = () => setOkunuyor(false);
-    window.speechSynthesis.speak(konusma);
+    setYukleniyor(true);
     setOkunuyor(true);
   };
 
@@ -133,12 +119,24 @@ export default function PostDetailPage() {
       <h1 className="text-3xl font-serif font-bold mt-4 mb-4">{yazi.baslik}</h1>
 
       <div className="flex items-center gap-3 mb-6">
-        <button
-          onClick={handleSesliOku}
-          className="border border-voice-border rounded-full px-4 py-1.5 text-sm hover:border-voice-black"
-        >
-          {okunuyor ? "⏹ Durdur" : "🔊 Sesli Oku"}
-        </button>
+        {okunuyor ? (
+          <audio
+            autoPlay
+            controls
+            src={postApi.getSesliOkuUrl(id, secilenDil.split("-")[0])}
+            onCanPlay={() => setYukleniyor(false)}
+            onEnded={() => setOkunuyor(false)}
+            className="h-9"
+          />
+        ) : (
+          <button
+            onClick={handleSesliOku}
+            className="border border-voice-border rounded-full px-4 py-1.5 text-sm hover:border-voice-black"
+          >
+            🔊 Sesli Oku
+          </button>
+        )}
+        {yukleniyor && <span className="text-xs text-voice-gray">Ses hazırlanıyor...</span>}
         <select
           value={secilenDil}
           onChange={(e) => setSecilenDil(e.target.value)}
@@ -158,7 +156,10 @@ export default function PostDetailPage() {
         />
       )}
 
-      <p className="text-lg font-serif leading-relaxed whitespace-pre-wrap">{yazi.icerik}</p>
+      <div
+        className="prose prose-lg font-serif max-w-none"
+        dangerouslySetInnerHTML={{ __html: yazi.icerik }}
+      />
 
       <div className="flex items-center gap-3 my-8 border-y border-voice-border py-4">
         <button

@@ -17,5 +17,6 @@ export const postApi = {
 },
   getByTag: (etiketIsim) => apiClient.get(`/yazilar/etiket/${etiketIsim}`),
   removeTag: (id, etiketIsim) => apiClient.delete(`/yazilar/${id}/etiketler/${etiketIsim}`),
+  getSesliOkuUrl: (id, dil) => `http://127.0.0.1:8000/yazilar/${id}/sesli-oku?dil=${dil}`,
 };
 

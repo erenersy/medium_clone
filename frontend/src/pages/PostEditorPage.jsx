@@ -2,6 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { postApi } from "../api/postApi";
 import CropModal from "../components/CropModal";
+import { useEditor, EditorContent } from "@tiptap/react";
+import { BubbleMenu } from "@tiptap/react/menus";
+import StarterKit from "@tiptap/starter-kit";
+import Link from "@tiptap/extension-link";
+import Placeholder from "@tiptap/extension-placeholder";
 
 export default function PostEditorPage() {
   const { id: urlId } = useParams();
@@ -16,17 +21,38 @@ export default function PostEditorPage() {
   const navigate = useNavigate();
   const zamanlayiciRef = useRef(null);
   const ilkYuklemeRef = useRef(true);
+  const editor = useEditor({
+  extensions: [
+    StarterKit.configure({
+      link: false,   // ← StarterKit'in kendi link eklentisini kapatıyoruz
+    }),
+    Link.configure({ openOnClick: false }),
+    Placeholder.configure({ placeholder: "Hikayeni anlat..." }),
+  ],
+  content: "",
+  onUpdate: ({ editor }) => {
+    setIcerik(editor.getHTML());
+  },
+  editorProps: {
+    attributes: {
+      class: "prose prose-lg font-serif max-w-none outline-none min-h-[400px]",
+    },
+  },
+});
 
-  useEffect(() => {
-    if (urlId) {
-      postApi.getById(urlId).then((res) => {
-        setBaslik(res.data.baslik);
-        setIcerik(res.data.icerik);
-        setKapakResmi(res.data.kapak_resmi);
-        setEtiketler(res.data.etiketler);
-      });
-    }
-  }, [urlId]);
+useEffect(() => {
+  if (urlId) {
+    postApi.getById(urlId).then((res) => {
+      setBaslik(res.data.baslik);
+      setIcerik(res.data.icerik);
+      setKapakResmi(res.data.kapak_resmi);
+      setEtiketler(res.data.etiketler);
+      if (editor && res.data.icerik) {
+        editor.commands.setContent(res.data.icerik);
+      }
+    });
+  }
+}, [urlId, editor]);
 
   useEffect(() => {
     if (ilkYuklemeRef.current) {
@@ -139,13 +165,51 @@ export default function PostEditorPage() {
         placeholder="Başlık"
         className="w-full text-3xl font-serif font-bold outline-none mb-4 placeholder:text-voice-border"
       />
-      <textarea
-        value={icerik}
-        onChange={(e) => setIcerik(e.target.value)}
-        placeholder="Hikayeni anlat..."
-        rows={15}
-        className="w-full text-lg font-serif outline-none resize-none placeholder:text-voice-border"
-      />
+    {editor && (
+  <BubbleMenu editor={editor} className="flex items-center gap-1 bg-voice-black rounded-lg px-2 py-1.5 shadow-lg">
+    <button
+      onClick={() => editor.chain().focus().toggleBold().run()}
+      className={`px-2 py-1 rounded text-white font-bold text-sm ${editor.isActive("bold") ? "bg-white/20" : ""}`}
+    >
+      B
+    </button>
+    <button
+      onClick={() => editor.chain().focus().toggleItalic().run()}
+      className={`px-2 py-1 rounded text-white italic text-sm ${editor.isActive("italic") ? "bg-white/20" : ""}`}
+    >
+      i
+    </button>
+    <button
+      onClick={() => {
+        const url = window.prompt("Link adresi:");
+        if (url) editor.chain().focus().setLink({ href: url }).run();
+      }}
+      className={`px-2 py-1 rounded text-white text-sm ${editor.isActive("link") ? "bg-white/20" : ""}`}
+    >
+      🔗
+    </button>
+    <button
+      onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+      className={`px-2 py-1 rounded text-white font-bold text-sm ${editor.isActive("heading", { level: 2 }) ? "bg-white/20" : ""}`}
+    >
+      H2
+    </button>
+    <button
+      onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+      className={`px-2 py-1 rounded text-white font-semibold text-xs ${editor.isActive("heading", { level: 3 }) ? "bg-white/20" : ""}`}
+    >
+      H3
+    </button>
+    <button
+      onClick={() => editor.chain().focus().toggleBlockquote().run()}
+      className={`px-2 py-1 rounded text-white text-lg leading-none ${editor.isActive("blockquote") ? "bg-white/20" : ""}`}
+    >
+      "
+    </button>
+  </BubbleMenu>
+)}
+
+<EditorContent editor={editor} className="mb-6" />
 
       <div className="mt-6 border-t border-voice-border pt-4">
         <div className="flex gap-2">

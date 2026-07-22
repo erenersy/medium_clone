@@ -12,6 +12,9 @@ import crud.post as post_crud
 from typing import Optional
 from schemas.user import UserResponse
 import crud.user as user_crud
+from gtts import gTTS
+import io
+from fastapi.responses import StreamingResponse
 
 router = APIRouter(prefix="/yazilar", tags=["Post"])
 
@@ -123,3 +126,21 @@ def kapak_resmi_yukle(
     guncel_yazi = post_crud.yazinin_kapak_resmini_guncelle(session, yazi, f"/uploads/{dosya_adi}")
     return _post_response_olustur(guncel_yazi, kullanici.isim)
 
+@router.get("/{yazi_id}/sesli-oku")
+def yaziyi_sesli_oku(yazi_id: int, dil: str = "tr", session: Session = Depends(get_session)):
+    yazi = post_crud.yazi_bul(session, yazi_id)
+    if not yazi:
+        raise HTTPException(status_code=404, detail="Yazi bulunamadi")
+
+    gecici = f'<div>{yazi.icerik}</div>'
+    import re
+    temiz_metin = re.sub(r'<[^>]+>', ' ', gecici)
+
+    metin = f"{yazi.baslik}. {temiz_metin}"
+    ses = gTTS(text=metin, lang=dil)
+
+    ses_verisi = io.BytesIO()
+    ses.write_to_fp(ses_verisi)
+    ses_verisi.seek(0)
+
+    return StreamingResponse(ses_verisi, media_type="audio/mpeg")
